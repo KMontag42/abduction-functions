@@ -15,3 +15,33 @@ exports.checkAllPlayersReady = functions.database.ref('games/{gameName}/players'
   )
   event.data.ref.parent.child('can_start').set(allPlayersReady)
 })
+
+const CARD_MAP = {
+  base: ['grey', 'grey', 'fbi', 'cultist', 'ancient astronaut theorist', 'citizen']
+}
+
+const selectRandomCard = cardMap => {
+  const cardName = cardMap[Math.floor(Math.random() * cardMap.length)]
+  const cardIndex = cardMap.indexOf(cardName)
+  cardMap.splice(cardIndex, 1)
+  return cardName
+}
+
+exports.gameStarted = functions.database.ref('games/{gameName}/is_started').onWrite(event => {
+  const isStarted = event.data.val()
+  if (isStarted) {
+    // do some shit
+    // pick a random card from the set for each player
+    const cardMap = CARD_MAP.base.slice()
+    const playersRef = event.data.ref.parent.child('players')
+    playersRef.once('value', snapshot => {
+      const players = snapshot.val()
+      Object.keys(players).forEach(player => {
+        const playerVal = players[player]
+        const playerCard = selectRandomCard(cardMap)
+        playersRef.child(player).child('card').set(playerCard)
+      })
+    })
+    /* playerCard =*/
+  }
+})
